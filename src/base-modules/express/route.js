@@ -24,7 +24,7 @@ class Route extends EventEmitter {
       }, (err) => {
         res.send({error: err})
       })
-    })
+    }, data)
     
   }
 

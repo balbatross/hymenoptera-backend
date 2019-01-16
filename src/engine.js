@@ -1,6 +1,9 @@
+var doT = require('dot')
+
 let default_connections = {
   'Express': {port: 8081},
-  'MongoDB': {url: 'mongodb://localhost:27017', db: 'music'}
+  'MongoDB': {url: 'mongodb://localhost:27017', db: 'music'},
+  'Puppeteer': {execPath: '/usr/bin/google-chrome', headless: false}
 }
 let modules = require('./base-modules').modules
 
@@ -45,6 +48,7 @@ let chain = [
 class HymenFlowEngine{
   constructor(){
     this.modules = modules
+    this._flow = this._flow.bind(this)
   }
 
 
@@ -66,6 +70,11 @@ class HymenFlowEngine{
     return Promise.all(next)
   }
 
+  _flow(cb, data){  
+    let next_chain = this.getNext(this.current_data, data, nodes, links)
+    cb(next_chain) 
+  }
+
   parse(chain){
     let nodes = chain.nodes;
     let links = chain.links;
@@ -74,23 +83,32 @@ class HymenFlowEngine{
     let node1 = this.findNode(nodes, inputNode)
 
     let inNode = this.findModule(node1.type, node1.func)(node1.params)
-    inNode.on('event', (cb) => {
-      let next_chain = this.getNext(inputNode, {}, nodes, links)
-      cb(next_chain) 
-    })
+
+    this.current_emitter = inNode;
+    this.current_node = inputNode
+    this.current_emitter.addListener('event', this._flow) 
+  }
+
+  stop(){
+    this.current_emitter.removeListener(this._flow)
   }
   
   findModule(str_type, str_module){
-    console.log("Find module", str_type, str_module)
     for(var i = 0; i < this.modules.length; i++){
-        let module = this.modules[i]
-        console.log(module)
+        let module = this.modules[i]  
         let id = module.id
-        console.log(id, str_type)
+        console.log(id, str_type) 
         if(id == str_type){
           return module.connection[str_module].bind(module.connection)
         }
       }
+  }
+
+  parseData(params, data){
+    let string_bean = JSON.stringify(params)
+    let data_template = doT.template(string_bean)
+
+    return JSON.parse(data_template(data))
   }
 
 
@@ -105,17 +123,17 @@ class HymenFlowEngine{
     
     let exit_nodes = nextNodes.map((x) => {
       let module = this.findNode(nodes, x)
-      let next = this.findNext(x, data, nodes, links)
-      if(next.length > 0){
-        let other_promise = Promise.all(next)
-        other_promise.then((a) => console.log(a))
-        return this.findModule(module.type, module.func)(module.params, data).then(() => Promise.all(next)).then((res) => {console.log("Result", res);return res})
-      }else{
-        console.log(nodes, x, module)
-        return this.findModule(module.type, module.func)(module.params, data)
-      }
-    })
-    console.log("EXIT NODES", exit_nodes)
+      
+      let params = this.parseData(module.params, data)
+      return this.findModule(module.type, module.func)(params).then((res) => {
+        let next = this.findNext(x, res, nodes, links)
+        if(next.length > 0){
+          return Promise.all(next)
+        }else{
+          return res
+        }
+      })
+    }) 
     return exit_nodes
   }
 
