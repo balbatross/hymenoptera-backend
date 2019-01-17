@@ -1,11 +1,11 @@
 var doT = require('dot')
+let modules = require('./base-modules').modules
 
 let default_connections = {
   'Express': {port: 8081},
   'MongoDB': {url: 'mongodb://localhost:27017', db: 'music'},
   'Puppeteer': {execPath: '/usr/bin/google-chrome', headless: false}
-}
-let modules = require('./base-modules').modules
+};
 
 let connections = []
 
@@ -22,22 +22,22 @@ for(var i = 0; i < modules.length; i++){
 let chain = [
   {
     nodes: [
-       {
-      id: '0',
-      type: 'base-express-server',
-      func: 'register',
-      params: {method: "GET", route: "/love"}
-    },
-       {
-      id: '1',
-      type: 'base-mongodb',
-      func: 'find',
-      params: {coll: 'musicians', query: {}}
-    },
+      {
+        id: '0',
+        type: 'base-express-server',
+        func: 'register',
+        params: {method: "GET", route: "/love"}
+      },
+      {
+        id: '1',
+        type: 'base-mongodb',
+        func: 'find',
+        params: {coll: 'musicians', query: {}}
+      },
     ],
     links: [
-      {src: '0',
-      dst:'1',
+      { src: '0',
+        dst:'1',
       },
     ]
   }
