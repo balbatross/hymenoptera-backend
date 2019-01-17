@@ -45,7 +45,7 @@ let chain = [
 ][0]
 
 
-class HymenFlowEngine{
+class FlowEngine{
   constructor(){
     this.modules = modules
     this._flow = this._flow.bind(this)
@@ -92,7 +92,7 @@ class HymenFlowEngine{
   stop(){
     this.current_emitter.removeListener(this._flow)
   }
-  
+
   findModule(str_type, str_module){
     for(var i = 0; i < this.modules.length; i++){
         let module = this.modules[i]  
@@ -110,7 +110,6 @@ class HymenFlowEngine{
 
     return JSON.parse(data_template(data))
   }
-
 
   findNext(current, data, nodes, links){
     let nextNodes = []
@@ -136,7 +135,6 @@ class HymenFlowEngine{
     }) 
     return exit_nodes
   }
-
 
   findInputNode(links){
     let hasInputs = {}
@@ -166,6 +164,5 @@ class HymenFlowEngine{
   }
 }
 
-module.exports = HymenFlowEngine;
-
+module.exports = FlowEngine;
 

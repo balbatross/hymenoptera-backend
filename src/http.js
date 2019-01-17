@@ -1,12 +1,12 @@
 var express = require('express');
-var HymenFlowEngine = require('./engine');
+var FlowEngine = require('./engine');
 var app = express();
 var bodyParser = require('body-parser')
 var cors = require('cors');
 app.use(cors())
 app.use(bodyParser.json())
 
-let engine = new HymenFlowEngine();
+let engine = new FlowEngine();
 
 app.get('/api/modules', (req, res) => {
   let modules = engine.getModules().map((x) => {
