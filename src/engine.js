@@ -14,11 +14,10 @@ for(var i = 0; i < modules.length; i++){
   let name = mod.name
   let _modules = mod.modules
   let server = mod.base.module
-  
+
   let inst = new server(default_connections[name])
   modules[i].connection = inst
 }
-
 
 let chain = [
   {
@@ -28,7 +27,7 @@ let chain = [
       type: 'base-express-server',
       func: 'register',
       params: {method: "GET", route: "/love"}
-    }, 
+    },
        {
       id: '1',
       type: 'base-mongodb',
@@ -44,16 +43,13 @@ let chain = [
   }
 ][0]
 
-
 class FlowEngine{
   constructor(){
     this.modules = modules
     this._flow = this._flow.bind(this)
   }
 
-
   start(){
-    
   }
 
   getModules(){
@@ -70,9 +66,9 @@ class FlowEngine{
     return Promise.all(next)
   }
 
-  _flow(cb, data){  
+  _flow(cb, data){
     let next_chain = this.getNext(this.current_data, data, nodes, links)
-    cb(next_chain) 
+    cb(next_chain)
   }
 
   parse(chain){
@@ -86,7 +82,7 @@ class FlowEngine{
 
     this.current_emitter = inNode;
     this.current_node = inputNode
-    this.current_emitter.addListener('event', this._flow) 
+    this.current_emitter.addListener('event', this._flow)
   }
 
   stop(){
@@ -95,9 +91,9 @@ class FlowEngine{
 
   findModule(str_type, str_module){
     for(var i = 0; i < this.modules.length; i++){
-        let module = this.modules[i]  
+        let module = this.modules[i]
         let id = module.id
-        console.log(id, str_type) 
+        console.log(id, str_type)
         if(id == str_type){
           return module.connection[str_module].bind(module.connection)
         }
@@ -119,10 +115,10 @@ class FlowEngine{
         nextNodes.push(links[i].dst)
       }
     }
-    
+
     let exit_nodes = nextNodes.map((x) => {
       let module = this.findNode(nodes, x)
-      
+
       let params = this.parseData(module.params, data)
       return this.findModule(module.type, module.func)(params).then((res) => {
         let next = this.findNext(x, res, nodes, links)
@@ -132,7 +128,7 @@ class FlowEngine{
           return res
         }
       })
-    }) 
+    })
     return exit_nodes
   }
 

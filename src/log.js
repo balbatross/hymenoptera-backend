@@ -1,13 +1,11 @@
 
-
-
 class Log {
   constructor(){
   }
 
   error(opts){
     return new Promise((resolve, reject) => {
-      
+
       console.log(opts.msg)
       resolve()
     })
@@ -28,4 +26,4 @@ class Log {
   }
 }
 
-module.exports = Log 
+module.exports = Log
