@@ -1,5 +1,5 @@
 var doT = require('dot')
-let modules = require('./base-modules').modules
+let modules = require('./base-modules')
 let FlowStorage = require('./flow-storage')
 
 let default_connections = {
@@ -21,14 +21,19 @@ let connections = []
 }
 */
 class FlowEngine{
-  constructor(){
-   // this.modules = modules
-    this.flows = new FlowStorage()
+  constructor(storage_backend){
+    this.modules = modules
+    this.storage = storage_backend
+    this.flows = new FlowStorage(this.storage)
   }
 
 
   addFlow(flow){
     return this.flows.add(flow)
+  }
+  
+  updateFlow(id, flow){
+    return this.flows.update(id, flow)
   }
 
   getFlows(){
@@ -38,7 +43,6 @@ class FlowEngine{
   getModules(){
     return this.modules;
   }
-
 
 
 }
