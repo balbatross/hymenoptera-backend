@@ -22,6 +22,15 @@ class FlowStorage {
     })
   }
 
+  get(id){
+    return new Promise((resolve, reject) => {
+      this.backend.collection('flows').findOne({id: id}, (err, result) => {
+        if(err) return reject(err);
+        resolve(result)
+      })
+    })
+  }
+
   getAll(){
     return new Promise((resolve, reject) => {
       this.backend.collection('flows').find({}).toArray((err, arr) => {

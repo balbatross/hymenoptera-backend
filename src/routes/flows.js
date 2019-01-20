@@ -45,5 +45,29 @@ module.exports = (engine) => {
     }
   })
 
+  router.post('/:id/run', (req, res) => {
+    let id = req.params.id;
+
+    if(id){
+      engine.runFlow(id).then((result) => {
+        res.send({result: result})
+      })
+    }else{
+      res.send({error: "No id supplied to run flow method"})
+    }
+  })
+
+  router.post('/:run_id/stop', (req, res) => {
+    let id = req.params.run_id;
+
+    if(id){
+      engine.stopFlow(id).then((result) => {
+        res.send({result: result})
+      })
+    }else{
+      res.send({error: "No active flow id supplied to method"})
+    }
+  })
+
   return router;
 }

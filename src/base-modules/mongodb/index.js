@@ -5,7 +5,8 @@ class MongoData {
   constructor(opts){
     this.url = opts.url
     this.db = opts.db
-    const client = MongoClient(opts.url).connect((err, conn) => {
+    this.mongoclient = new MongoClient(opts.url)
+    this.mongoclient.connect((err, conn) => {
       this.client = conn.db(this.db)
     })
   }
@@ -32,6 +33,10 @@ class MongoData {
         }
       })
     })
+  }
+
+  stop(){
+    this.mongoclient.close()
   }
 }
 

@@ -16,6 +16,10 @@ class HttpRequest {
       })
     })
   }
+
+  stop(){
+    console.log("Nothing to do")
+  }
 }
 
 module.exports = {

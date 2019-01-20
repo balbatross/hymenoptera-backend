@@ -1,6 +1,9 @@
 var doT = require('dot')
+var uuid = require('uuid');
 let modules = require('./base-modules')
+let Flow = require('./flow');
 let FlowStorage = require('./flow-storage')
+let ConnectionStorage = require('./connection-storage')
 
 let default_connections = {
   'Express': {port: 8081},
@@ -24,9 +27,43 @@ class FlowEngine{
   constructor(storage_backend){
     this.modules = modules
     this.storage = storage_backend
+    this.connections = new ConnectionStorage(this.storage)
     this.flows = new FlowStorage(this.storage)
+
+    this.active_chains = {}
   }
 
+  getConnections(){
+    return this.connections.getAll()
+  }
+
+  getConnectionsForModule(module){
+    return this.connections.getByModule(module)
+  } 
+
+  addConnectionForModule(module, connection){
+    return this.connections.add(module, connection)
+  }
+
+  runFlow(flow_id){
+    return new Promise((resolve, reject) => {
+      this.getFlow(flow_id).then((flow) => {
+          let runnableFlow = new Flow(this.modules, this.connections, flow)
+          let id = uuid.v4();
+          this.active_chains[id] = runnableFlow;
+          runnableFlow.start_flow();
+          resolve(id)
+      })
+    })
+  }
+
+  stopFlow(active_id){
+    return new Promise((resolve, reject) => {
+      this.active_chains[active_id].stop_flow();
+      delete this.active_chains[active_id]
+      resolve({success: true})
+    })
+  }
 
   addFlow(flow){
     return this.flows.add(flow)
@@ -34,6 +71,10 @@ class FlowEngine{
   
   updateFlow(id, flow){
     return this.flows.update(id, flow)
+  }
+
+  getFlow(id){
+    return this.flows.get(id);
   }
 
   getFlows(){

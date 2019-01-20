@@ -1,5 +1,4 @@
 var express = require('express');
-var app = express();
 var bodyParser = require('body-parser')
 var Route = require('./route')
 
@@ -7,25 +6,29 @@ class Server {
   constructor(opts){
     this.port = opts.port
     this.routes = [] 
-
-    app.use(bodyParser.json())
-    app.listen(this.port)
+    this.app = express();
+    this.app.use(bodyParser.json())
+    this.server = this.app.listen(this.port)
   }
 
   registerRoute(route){
     this.routes.push(route);
-    route.register(app)
+    route.register(this.app)
   }
 
   register(opts){
     let r = new Route(opts);
-    r.register(app)
+    r.register(this.app)
     this.routes.push(r)
     return r;
   }
 
   start(){
     app.listen(this.port)
+  }
+
+  stop(){
+    this.server.close()
   }
 }
 

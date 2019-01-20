@@ -34,6 +34,10 @@ class WebDriver {
        })
     })
   }
+
+  stop(){
+    this.browser.close()
+  }
 } 
 
 module.exports = {
