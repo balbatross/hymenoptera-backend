@@ -1,0 +1,29 @@
+{
+  "name": "base-express-server",
+  "description": "Express",
+  "version": "0.0.0",
+  "main": "index.js",
+  "options": {
+    "port": "int"
+  },
+  "dependencies": {
+    "express": "^4.16.4",
+    "body-parser": "^1.18.3"
+  },
+  "modules": [
+    {
+      "key": "register",
+      "config": {
+        "params": {
+          "route": "string",
+          "method": "string"
+        },
+        "output": {
+          "params": {},
+          "body": {},
+          "query": {}
+        }
+      }
+    }
+  ]
+}

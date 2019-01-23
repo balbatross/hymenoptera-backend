@@ -3,12 +3,18 @@ var bodyParser = require('body-parser')
 var Route = require('./route')
 
 class Server {
-  constructor(opts){
-    this.port = opts.port
+  constructor(opts, instance){
+    if(!opts){
+      this.app = instance
+    }else{
+      this.app = express()
+    }
+    this.port = this.app.address().port || opts.port
     this.routes = [] 
-    this.app = express();
     this.app.use(bodyParser.json())
-    this.server = this.app.listen(this.port)
+    if(!this.app.address().port){
+      this.server = this.app.listen(this.port)
+    }
   }
 
   registerRoute(route){
@@ -21,10 +27,6 @@ class Server {
     r.register(this.app)
     this.routes.push(r)
     return r;
-  }
-
-  start(){
-    app.listen(this.port)
   }
 
   stop(){
@@ -44,7 +46,12 @@ module.exports = {
       params: {
         route: 'string',
         method: 'string'
-      }
+      },
+      output:  {
+        params: {},
+        body: {},
+        query: {}
+      } 
     }
   }
   ]

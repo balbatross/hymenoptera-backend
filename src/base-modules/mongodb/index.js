@@ -2,12 +2,28 @@ const MongoClient = require('mongodb').MongoClient
 
 
 class MongoData {
-  constructor(opts){
-    this.url = opts.url
-    this.db = opts.db
-    this.mongoclient = new MongoClient(opts.url)
-    this.mongoclient.connect((err, conn) => {
-      this.client = conn.db(this.db)
+  constructor(opts, instance){
+    if(!opts){
+      this.client = instance
+    }else{
+      this.url = opts.url
+      this.db = opts.db
+      this.mongoclient = new MongoClient(opts.url)
+      this.mongoclient.connect((err, conn) => {
+        this.client = conn.db(this.db)
+      })
+    }
+  }
+
+  insert(opts){
+    return new Promise((resolve, reject) => {
+      this.client.collection(opts.coll).insertOne(opts.object, (err, res) => {
+        if(err){
+          reject(err)
+        }else{  
+          resolve(res)
+        }
+      })
     })
   }
 
@@ -46,12 +62,25 @@ module.exports = {
   base: {module: MongoData, opts: {url: 'string', db: 'string'}},
   modules: [
     {
+      key: 'insertOne',
+      config: {
+        type: 'process',
+        params: {
+          coll: 'string',
+          object: {}
+        }
+      }
+    },
+    {
       key: 'find',
       config: {
         type: 'process',
         params: {
           coll: 'string',
           query: 'object'
+        },
+        output: {
+          results: []
         }
       }
     },

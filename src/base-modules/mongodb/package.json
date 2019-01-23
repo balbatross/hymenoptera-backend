@@ -1,0 +1,27 @@
+{
+  "name": "base-mongodb",
+  "description": "MongoDB",
+  "version": "0.0.0",
+  "main": "index.js",
+  "options": {
+    "url": "string",
+    "db": "string"
+  },
+  "dependencies": {    
+    "mongodb": "^3.1.12"
+  },
+  "modules": [
+    {
+      "key": "find",
+      "config": {
+        "params": {
+          "coll": "string",
+          "query": {}
+        },
+        "output": {
+          "result": []
+        }
+      }
+    }
+  ]
+}
