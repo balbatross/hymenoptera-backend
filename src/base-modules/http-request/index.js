@@ -7,7 +7,7 @@ class HttpRequest {
   
   request(opts){
     return new Promise((resolve, reject) => {
-      request(opts.url, {json: true}, (err, res, body) => {
+      request({url: opts.url, method: opts.method, body: opts.body || null}, {json: true}, (err, res, body) => {
         if(err){
           reject(err)
         }else{
@@ -33,6 +33,8 @@ module.exports = {
         type: 'process',
         params: {
           url: 'string',
+          method: 'string',
+          body: {}
         }
       }
     }

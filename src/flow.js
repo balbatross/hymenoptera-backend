@@ -9,12 +9,13 @@ class Flow {
     this.nodes = chain.flow.nodes;
     this.links = chain.flow.links;
     this.running = false
+    this.emitters = []
     this._flow = this._flow.bind(this)
     this.init_flow()
   }
 
   init_flow(){
-    this.first_node = this.find_node(this.find_start())
+    this.first_nodes = this.find_start().map((n) => this.find_node(n))
   }
 
   init_modules(){
@@ -55,21 +56,34 @@ class Flow {
   start_flow(){
     this.init_modules().then(() => {
 
-      this.emitter = this.get_node_function(this.first_node)(this.first_node.opts)
+      this.first_nodes.map((x) => {
+        if(x.config.type == 'input'){
+          let em = this.get_node_function(x)(x.opts)
+          em.addListener('event', (cb, data) => {
+            this._flow(x, cb, data)
+          })
+          this.emitters.push(em)
+        }else{
+          let func = this.get_node_function(x)
+          let next = Promise.all(this.find_next(x, {}))
+          func(x.opts).then(next)
+        }
+      })
 
-      this.emitter.addListener('event', this._flow)
     })
   }
 
   stop_flow(){
-    this.emitter.removeListener('event', this._flow)
+    this.emitters.map((em) => {
+      em.removeListener('event', this._flow)
+    })
     for(var k in this.connections){
       this.connections[k].stop();
     }
   }
 
-  _flow(callback, data){
-    let chain = Promise.all(this.find_next(this.first_node, data))
+  _flow(node, callback, data){
+    let chain = Promise.all(this.find_next(node, data))
     callback(chain)
   }
 
@@ -86,6 +100,7 @@ class Flow {
   }
 
   find_start(){
+    let entry_nodes = []
     let inputs = {}
     let nodes = {}
     
@@ -107,9 +122,10 @@ class Flow {
 
       if(!exists){
         input = node
-        return node
+        entry_nodes.push(node)
       }
     }
+    return entry_nodes
   }
 
   find_exit_points(node_id){
