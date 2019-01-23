@@ -56,44 +56,4 @@ class MongoData {
   }
 }
 
-module.exports = {
-  id: 'base-mongodb',
-  name: 'MongoDB',
-  base: {module: MongoData, opts: {url: 'string', db: 'string'}},
-  modules: [
-    {
-      key: 'insertOne',
-      config: {
-        type: 'process',
-        params: {
-          coll: 'string',
-          object: {}
-        }
-      }
-    },
-    {
-      key: 'find',
-      config: {
-        type: 'process',
-        params: {
-          coll: 'string',
-          query: 'object'
-        },
-        output: {
-          results: []
-        }
-      }
-    },
-    {
-      key: 'update',
-      config: {
-        type: 'process',
-        params: {
-          coll: 'string',
-          query: {},
-          update: {}
-        }
-      }
-    }
-  ]  
-}
+module.exports = MongoData;

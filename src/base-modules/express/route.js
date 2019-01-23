@@ -49,15 +49,4 @@ class Route extends EventEmitter {
   }
 }
 
-Route.node_spec = {
-  opts: {
-    method: 'string',
-    route: 'string',
-    func: 'function'
-  },
-  ports: {
-    'trigger': 'out'
-  }
-}
-
 module.exports = Route

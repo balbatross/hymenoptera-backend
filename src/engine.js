@@ -4,6 +4,7 @@ let modules = require('./base-modules')
 let Flow = require('./flow');
 let FlowStorage = require('./flow-storage')
 let ConnectionStorage = require('./connection-storage')
+let FlowPackager = require('./package-exporter')
 
 let default_connections = {
   'Express': {port: 8081},
@@ -29,7 +30,7 @@ class FlowEngine{
     this.storage = storage_backend
     this.connections = new ConnectionStorage(this.storage)
     this.flows = new FlowStorage(this.storage)
-
+    this.packager = new FlowPackager(modules, this.connections);
     this.active_chains = {}
   }
 

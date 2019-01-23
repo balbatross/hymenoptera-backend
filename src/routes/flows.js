@@ -45,7 +45,16 @@ module.exports = (engine) => {
     }
   })
 
+  //PACKAGE ROUTE
   router.post('/:id/run', (req, res) => {
+    let id = req.params.id;
+
+    engine.getFlow(id).then((flow) => {
+      engine.packager.bundle(flow)
+    })
+  })
+  //RUN ROUTE
+  router.post('/:id/package', (req, res) => {
     let id = req.params.id;
 
     if(id){

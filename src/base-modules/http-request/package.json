@@ -1,0 +1,26 @@
+{
+  "name": "base-http-request",
+  "description": "HTTP Request",
+  "version": "0.0.0",
+  "main": "index.js",
+  "options": {
+  },
+  "dependencies": {     
+    "request": "^2.88.0"
+  },
+  "modules": [
+    {
+      "key": "request",
+      "config": {
+        "params": {
+          "url": "string",
+          "method": "string",
+          "body": {}
+        },
+        "output": {
+          "result": {}
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "name": "base-scheduler",
+  "description": "Cron",
+  "version": "0.0.0",
+  "main": "index.js",
+  "files": ["./task.js"],
+  "options": {
+  },
+  "dependencies": {         
+    "node-schedule": "^1.3.1"
+  },
+  "modules": [
+    {
+      "key": "scheduleTask",
+      "config": {
+        "params": {
+          "schedule": "cronjob"
+        },
+        "output": {
+          "success": "boolean"
+        }
+      }
+    }
+  ]
+}

@@ -7,12 +7,13 @@ class Server {
     if(!opts){
       this.app = instance
     }else{
+      this.port = opts.port
       this.app = express()
     }
-    this.port = this.app.address().port || opts.port
+
     this.routes = [] 
     this.app.use(bodyParser.json())
-    if(!this.app.address().port){
+    if(opts){
       this.server = this.app.listen(this.port)
     }
   }
@@ -34,25 +35,4 @@ class Server {
   }
 }
 
-module.exports = {
-  id: 'base-express-server',
-  name: 'Express',
-  base: {module: Server, opts: {port: 'int'}},
-  modules: [
-  {
-    key: 'register',
-    config: {
-      type: 'input',
-      params: {
-        route: 'string',
-        method: 'string'
-      },
-      output:  {
-        params: {},
-        body: {},
-        query: {}
-      } 
-    }
-  }
-  ]
-}
+module.exports = Server
