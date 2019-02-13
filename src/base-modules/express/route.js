@@ -22,6 +22,7 @@ class Route extends EventEmitter {
       promise.then((result) => {
           res.send(result)
       }, (err) => {
+        console.log(err)
         res.send({error: err})
       })
     }, data)

@@ -4,10 +4,12 @@ const mergeDeps = require('@userfrosting/merge-package-dependencies')
 const uuid = require('uuid')
 const fs = require('fs')
 const moniker = require('moniker')
+const async = require('async');
+const beautify = require('js-beautify').js;
 
-
+const NPM_TOKEN = '/zIAo7AC7tQSxDFEYhramGpmauNDMCU3oCjxHh7J5MI=';
 const USER_CONNECTION = '8c8496a2-929f-4c32-a530-ca2c61bb3b0d';
-const VERSION = '0.0.9';
+const VERSION = '0.0.18';
 
 class Packager {
   constructor(modules, connections){
@@ -53,6 +55,7 @@ class Packager {
   }
 
   merge_packfiles(flow, pkgFiles, version){
+    pkgFiles.push('./base.package.json')
     return mergeDeps.npm({
         name: flow.name.toLowerCase().replace(/ /g, '-'),
         description: flow.name,
@@ -76,68 +79,152 @@ class Packager {
   libify(modules, files, module_index){
     let id = uuid.v4();
     let libFiles = {}
+    let module = modules[module_index]
     files.map((file) => {
-      libFiles[`lib/${id}/${file}`] = fs.readFileSync(`${modules[module_index].fs_path}/${file}`, 'utf8')
+      libFiles[`lib/${module.id}/${file}`] = fs.readFileSync(`${module.fs_path}/${file}`, 'utf8')
     })
 
-    return {id: id, assigned: moniker.choose().replace(/-/g, '_'), files: libFiles}
+    return {id: module.id, assigned: module.id.replace(/-/g, '_'), files: libFiles}
   }
 
   write_readme(){
 
   }
 
-  write_main(flow, activeModules, activeConnections, published_mods){
+  get_defined_connections(connections){
+    
+  }
 
-  //Data grabbing for template
-    let className = flow.name.replace(/ /g, '')
+  merge_connections(connections, user_inputs){
+    
+    return new Promise((resolve, reject) => {
 
-    let inputs = activeModules.filter((x) => {
-      let connections = activeConnections[x.id]
-      let exists = false      
+      let connection_definition = `
+        this.connections = {${Object.keys(connections).map((x) => `"${x}": {}`).join(',')}};
+      `;
+      
+      let processors = []
+      let _connections = []
       for(var k in connections){
-        if(k == USER_CONNECTION){
-          exists = true;
+        let module_conns = connections[k]
+        let _conns = []
+        for(var conn in module_conns){
+          _conns.push(conn)
+        }
+
+        _connections.push({module: k, connections: _conns})
+      }
+
+      async.map(_connections, (item, cb) => {
+        async.map(item.connections, (conn, _cb) => {
+          if(conn == USER_CONNECTION){
+            console.log("CONN", user_inputs, item)
+            _cb(null, `\n this.connections['${item.module}']['${conn}'] = ${user_inputs[item.module]};`)
+          }else{
+            this.connection_storage.getById(conn).then((_connection) => {
+              _cb(null, `\n this.connections['${item.module}']['${conn}'] = ${JSON.stringify(_connection.connection.opts)};`)
+            })
+          }
+        }, (_err, _results) => {
+          console.log(_err)
+          cb(_err,  _results)
+        })
+      }, (err, results) => {
+        console.log(results)
+        results.map((item) => {
+          console.log(item)
+          item.map((c) => {
+            console.log(c)
+            connection_definition += c
+          })
+        })
+
+        resolve(connection_definition)
+      })
+
+    })
+  }
+
+  find_published(published, item){
+    for(var i = 0; i < published.length; i++){
+      if(published[i].id == item.id){
+        return published[i];
+      }
+    }
+  }
+  
+  write_main(flow, activeModules, activeConnections, published_mods){
+    return new Promise((resolve, reject) => {
+      //Data grabbing for template
+      let className = flow.name.replace(/ /g, '')
+
+      let inputs = activeModules.filter((x) => {
+        let connections = activeConnections[x.id]
+        let exists = false      
+        for(var k in connections){
+          if(k == USER_CONNECTION){
+            exists = true;
+          }
+        }
+        return exists;
+      })
+
+      let userInputs = inputs.map((x) => x.id.toLowerCase().replace(/-/g, '_'))
+
+      let moduleInit = published_mods.map((x) => {
+        return `let ${x.assigned}_inst = new ${x.assigned}(null, this.userConnections['${x.id}']);`
+      }).join(`\n`)
+
+
+      let imports = published_mods.map((x) => {
+        return `const ${x.assigned} = require('./lib/${x.id}');\n`
+      }).join('')
+
+      let modules = published_mods.map((x) => {
+        return `"${x.id}": ${x.assigned},`
+      }).join('\n')
+
+
+      let inputArgs = {}
+      console.log(published_mods, inputs, "STUFF")
+      let inputAssignment = inputs.map((x, ix) => {
+        inputArgs[this.find_published(published_mods, x).id] = userInputs[ix] //`this.userConnections['${published_mods[ix].id}'] = ${userInputs[ix]};`
+      })
+
+      let _flow = {
+        flow: {
+          nodes: flow.flow.nodes,
+          links: flow.flow.links
         }
       }
-      return exists;
+
+      this.merge_connections(activeConnections, inputArgs).then((connection_blob) => {
+
+          //Template code for exported flows
+              let template = `
+          var Flow = require('./flow')
+          ${imports}
+          
+          const modules = {
+            ${modules}
+          }
+
+          class ${className} {
+            constructor(${userInputs.join(', ')}){ 
+              ${connection_blob} 
+              let flowable = new Flow(modules, this.connections, ${JSON.stringify(_flow)});
+
+              flowable.start_flow();
+            }
+          }
+
+          module.exports = ${className}
+              
+              `
+        let output_main = beautify(template, {indent_size: 2, space_in_empty_paren: true})
+        resolve(output_main) 
+      })
     })
-
-    let userInputs = inputs.map((x) => x.id.toLowerCase().replace(/-/g, '_'))
-
-    let moduleInit = published_mods.map((x) => {
-      return `let ${x.assigned}_inst = new ${x.assigned}(null, this.userConnections['${x.id}']);`
-    }).join(`\n`)
-
-
-    let imports = published_mods.map((x) => {
-      return `const ${x.assigned} = require('./lib/${x.id}');\n`
-    }).join('')
-
-
-    let inputAssignment = inputs.map((x, ix) => {
-      return `this.userConnections['${published_mods[ix].id}'] = ${userInputs[ix]};`
-    }).join(`\n`)
-
-//Template code for exported flows
-    let template = `
-
-${imports}
-
-class ${className} {
-  constructor(${userInputs.join(', ')}){
-    this.userConnections = {}
-    ${inputAssignment}
-
-    ${moduleInit}
-  }
-}
-
-module.exports = ${className}
-    
-    `
-
-    return template;
   }
 
   //Identify modules used
@@ -146,59 +233,72 @@ module.exports = ${className}
   //Find user input connections
   //Prechain flow
   //Write readme
-  bundle(flow){
-    let modulesUsed = this.find_modules(flow);
-    let connectionsUsed = this.find_connections(flow)
+  bundle(flow, version){
+    return new Promise((resolve, reject) => {
+      console.log("Bundling Flow: ", flow)
+      let modulesUsed = this.find_modules(flow);
+      let connectionsUsed = this.find_connections(flow)
 
-    let packageFiles = modulesUsed.map((x) => {
-      return `${x.fs_path}/package.json`
-    })
+      let packageFiles = modulesUsed.map((x) => {
+        return `${x.fs_path}/package.json`
+      })
 
-    let moduleFileBundles = modulesUsed.map((x) => {
-      return this.get_module_files(x)
-    })
+      let moduleFileBundles = modulesUsed.map((x) => {
+        return this.get_module_files(x)
+      })
 
-    let mergedPackageFile = this.merge_packfiles(flow, packageFiles, VERSION) 
+      let mergedPackageFile = this.merge_packfiles(flow, packageFiles, version) 
 
-    let publishSpec = {
-      'package.json': mergedPackageFile,
-    }
-
-    let publishedModules = moduleFileBundles.map((x, ix) => {
-      let published_mod = this.libify(modulesUsed, x, ix)
-      publishSpec = {
-        ...publishSpec,
-        ...published_mod.files
+      let publishSpec = {
+        'package.json': mergedPackageFile,
       }
-      return published_mod
-    })
+
+      let publishedModules = moduleFileBundles.map((x, ix) => {
+        let published_mod = this.libify(modulesUsed, x, ix)
+        publishSpec = {
+          ...publishSpec,
+          ...published_mod.files
+        }
+        return published_mod
+      })
 
 
-/*    publishSpec['README.md'] = `
-      #${flow.name}
+  /*    publishSpec['README.md'] = `
+        #${flow.name}
 
-      ## Usage
-        
-        const Lib = require('${flow.name.toLowerCase().replace(/ /g, '-')}')
+        ## Usage
+          
+          const Lib = require('${flow.name.toLowerCase().replace(/ /g, '-')}')
 
-        const instantiated = new Lib(${userInputs});
- 
+          const instantiated = new Lib(${userInputs});
+   
 
-    `
-*/
+      `
+  */
 
-    publishSpec['index.js'] = this.write_main(flow, modulesUsed, connectionsUsed, publishedModules)
-    console.log(publishSpec)
-    
-    npmPublish(publishSpec, {
-      auth: {
-        token: 'ZQLH4mrZw9zXnB37CgNGXl8J4axCfVnoMdcrk/ynB04=',
-      },
-      registry: "http://localhost:4873"
-    }).then(() => {
-      console.log("Published: ", flow.name)
-    })
-  
+      publishSpec['flow/index.js'] = fs.readFileSync('./src/flow/index.js', 'utf8')
+      publishSpec['flow/flow.js'] = fs.readFileSync('./src/flow/flow.js', 'utf8')
+      publishSpec['flow/parser.js'] = fs.readFileSync('./src/flow/parser.js', 'utf8')
+
+      this.write_main(flow, modulesUsed, connectionsUsed, publishedModules).then((indexFile) => {
+        publishSpec['index.js'] = indexFile 
+        console.log(publishSpec['index.js'])      
+        npmPublish(publishSpec, {
+          auth: {
+            token: NPM_TOKEN,
+          },
+          registry: "http://localhost:4873"
+        }).then(() => {
+          console.log("Published: ", flow.name)
+          resolve({name: mergedPackageFile.name, version: mergedPackageFile.version})
+        }).catch((err) => {
+          reject({error: err})
+        })
+
+
+
+      })
+    }) 
   }
 }
 

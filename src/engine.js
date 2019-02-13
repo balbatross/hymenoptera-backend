@@ -3,6 +3,7 @@ var uuid = require('uuid');
 let modules = require('./base-modules')
 let Flow = require('./flow');
 let FlowStorage = require('./flow-storage')
+let ProjectStorage = require('./project-storage')
 let ConnectionStorage = require('./connection-storage')
 let FlowPackager = require('./package-exporter')
 
@@ -29,9 +30,22 @@ class FlowEngine{
     this.modules = modules
     this.storage = storage_backend
     this.connections = new ConnectionStorage(this.storage)
+    this.projects = new ProjectStorage(this.storage)
     this.flows = new FlowStorage(this.storage)
     this.packager = new FlowPackager(modules, this.connections);
     this.active_chains = {}
+  }
+
+  getProjects(){
+    return this.projects.getAll()
+  }
+
+  getProject(id){
+    return this.projects.get(id)
+  }
+
+  addProject(proj){
+    return this.projects.add(proj)
   }
 
   getConnections(){

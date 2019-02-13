@@ -16,7 +16,7 @@
       "config": {
         "params": {
           "coll": "string",
-          "query": {}
+          "query": "object"
         },
         "output": {
           "result": []
@@ -28,7 +28,7 @@
       "config": { 
         "params": {
           "coll": "string",
-          "object": {}
+          "object": "object"
         }
       }
     },
@@ -37,8 +37,8 @@
       "config": {
         "params": {
           "coll": "string",
-          "query": {},
-          "update": {}
+          "query": "object",
+          "update": "object" 
         }
       }
     }

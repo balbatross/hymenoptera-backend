@@ -5,7 +5,8 @@ var module_paths = [
   "./express",
   "./mongodb",
   "./http-request",
-  "./scheduler"
+  "./scheduler",
+  "./opencv"
 ].map((x) => path.dirname(__filename) + "/" + x)
 
 var modules = module_paths.map((m) => {

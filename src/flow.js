@@ -1,11 +1,13 @@
 const doT = require('dot')
 const async = require('async');
 
+const USER_CONNECTION = '8c8496a2-929f-4c32-a530-ca2c61bb3b0d';
+
 class Flow {
   constructor(modules, connections, chain) {
     this.modules = modules;
-    this.connection_engine = connections;
-    this.connections = {}
+    this.connections = connections;
+    this.instantiated = {}
     this.nodes = chain.flow.nodes;
     this.links = chain.flow.links;
     this.running = false
@@ -35,13 +37,21 @@ class Flow {
         return (cb) => {
           let module_inst = block.inst
           let module_name = block.name
+          let module = this.modules[module_name]
+          let conn;
 
-          this.connection_engine.getById(module_inst).then((connection) => {
-            let module = this.modules[module_name]
-            let conn = new module.base.module(connection.connection.opts)
-            this.connections[module_inst] = conn
-            cb(null, module_inst)
-          }) 
+          if(module_inst == USER_CONNECTION){
+            conn = new module(null, this.connections[module_name][module_inst])
+          }else{
+            conn = new module(this.connections[module_name][module_inst])
+          }
+          let _c = {}
+          _c[module_inst] = conn
+          this.instantiated[module_name] = {
+            ...this.instantiated[module_name],
+            ..._c
+          }
+          cb(null, _c)
         }
       }), (err) => {
         if(err){
@@ -88,7 +98,8 @@ class Flow {
   }
 
   get_node_function(node){
-    return this.connections[node.module_inst][node.delegator].bind(this.connections[node.module_inst]) 
+    console.log(this.instantiated, node, " finding a function pairing")
+    return this.instantiated[node.module_name][node.module_inst][node.delegator].bind(this.instantiated[node.module_name][node.module_inst]) 
   }
 
   find_module(node){

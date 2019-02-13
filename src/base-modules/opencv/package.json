@@ -1,0 +1,47 @@
+{
+  "name": "base-opencv",
+  "description": "OpenCV",
+  "version": "0.0.0",
+  "main": "index.js",
+  "options": {
+    "capture_device": "int"
+  },
+  "dependencies": {     
+    "opencv4nodejs": "^4.14.1"
+  },
+  "modules": [
+    {
+      "key": "read",
+      "config": {
+        "params": {
+        },
+        "output": {
+          "frame": {
+            "step": "int",
+            "elemSize": "int",
+            "sizes": ["int", "int"],
+            "empty": "bool",
+            "depth": "int",
+            "dims": "int",
+            "channels": "int",
+            "type": "int",
+            "cols": "int",
+            "rows": "int"
+          }
+        }
+      } 
+    },
+    {
+      "key": "imshow",
+      "config": {
+        "params": {
+          "window": "string",
+          "frame": "object"
+        },
+        "output": {
+          "result": {"success": "bool"}
+        }
+      }
+    }
+  ]  
+}
