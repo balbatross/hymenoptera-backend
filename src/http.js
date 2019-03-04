@@ -4,12 +4,19 @@ var app = express();
 var bodyParser = require('body-parser')
 var cors = require('cors');
 var routes = require('./routes')
+var jwt = require('express-jwt')
 var MongoClient = require('mongodb').MongoClient;
 
 const uuid = require('uuid')
 
 app.use(cors())
 app.use(bodyParser.json())
+app.use([ 
+  '/api/projects',
+  '/api/connections', 
+  '/api/flows',
+  '/api/modules'
+], jwt({secret: 'SECRET-ISH'}))
 
 let data_conf = {
   url: 'mongodb://localhost',

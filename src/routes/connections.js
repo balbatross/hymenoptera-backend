@@ -20,5 +20,13 @@ module.exports = (engine) => {
       res.send({connection: conn})
     })
   })
+
+  router.get('/p/:id', (req, res) => {
+    engine.getConnectionsForProject(req.params.id)
+  })
+
+  router.post('/p/:id', (req, res) => {
+    engine.addConnectionForProject(req.params.id, req.body.connection)
+  })
   return router;
 }

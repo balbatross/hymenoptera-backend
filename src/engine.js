@@ -6,7 +6,7 @@ let FlowStorage = require('./flow-storage')
 let ProjectStorage = require('./project-storage')
 let ConnectionStorage = require('./connection-storage')
 let FlowPackager = require('./package-exporter')
-
+let Auth = require('./auth')
 let default_connections = {
   'Express': {port: 8081},
   'MongoDB': {url: 'mongodb://localhost:27017', db: 'music'},
@@ -29,6 +29,7 @@ class FlowEngine{
   constructor(storage_backend){
     this.modules = modules
     this.storage = storage_backend
+    this.auth = new Auth(this.storage)
     this.connections = new ConnectionStorage(this.storage)
     this.projects = new ProjectStorage(this.storage)
     this.flows = new FlowStorage(this.storage)
@@ -36,12 +37,20 @@ class FlowEngine{
     this.active_chains = {}
   }
 
-  getProjects(){
-    return this.projects.getAll()
+  registerUser(user){
+    return this.auth.register(user)
   }
 
-  getProject(id){
-    return this.projects.get(id)
+  authenticateUser(user){
+    return this.auth.authenticate(user)
+  }
+
+  getProjects(user_id){
+    return this.projects.getAll(user_id)
+  }
+
+  getProject(user_id, id){
+    return this.projects.get(user_id, id)
   }
 
   addProject(proj){
@@ -80,20 +89,20 @@ class FlowEngine{
     })
   }
 
-  addFlow(flow){
-    return this.flows.add(flow)
+  addFlow(user_id, project_id, flow){
+    return this.flows.add(user_id, project_id, flow)
   }
   
-  updateFlow(id, flow){
-    return this.flows.update(id, flow)
+  updateFlow(user_id, project_id, id, flow){
+    return this.flows.update(user_id, project_id, id, flow)
   }
 
-  getFlow(id){
-    return this.flows.get(id);
+  getFlow(user_id, project_id, id){
+    return this.flows.get(user_id, project_id, id);
   }
 
-  getFlows(){
-    return this.flows.getAll()
+  getFlows(user_id, project_id){
+    return this.flows.getAll(user_id, project_id)
   }
 
   getModules(){

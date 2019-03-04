@@ -4,9 +4,11 @@ const path = require('path')
 var module_paths = [
   "./express",
   "./mongodb",
+  "./minio",
   "./http-request",
   "./scheduler",
-  "./opencv"
+  "./opencv",
+  "./packaging"
 ].map((x) => path.dirname(__filename) + "/" + x)
 
 var modules = module_paths.map((m) => {

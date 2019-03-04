@@ -1,0 +1,29 @@
+{
+  "name": "base-minio",
+  "description": "Minio",
+  "version": "0.0.0",
+  "main": "index.js",
+  "options": {
+    "url": "string",
+    "port": "int",
+    "accessKey": "string",
+    "secretKey": "string"
+  },
+  "dependencies": {
+    "minio": "^7.0.5"
+  },
+  "modules": [
+    {
+      "key": "listObjects",
+      "config": {
+        "params": {
+          "bucket": "string",
+          "prefix": "string"
+        },
+        "output": {
+          "result": []
+        }
+      }
+    }
+  ]
+}

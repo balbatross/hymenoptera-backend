@@ -6,18 +6,137 @@ const fs = require('fs')
 const moniker = require('moniker')
 const async = require('async');
 const beautify = require('js-beautify').js;
+const git = require('isomorphic-git')
+
+const git_registry = require('./packaging/git')
 
 const NPM_TOKEN = '/zIAo7AC7tQSxDFEYhramGpmauNDMCU3oCjxHh7J5MI=';
 const USER_CONNECTION = '8c8496a2-929f-4c32-a530-ca2c61bb3b0d';
 const VERSION = '0.0.18';
 
+git.plugins.set('fs', fs)
+
 class Packager {
   constructor(modules, connections){
     this.connection_storage = connections;
     this.modules = modules;
+    this.registry = new git_registry("/tmp")
     verdaccio.stopAll()
     verdaccio.start()
   }
+
+  merge_packfiles(flow, pkgFiles, version){
+    pkgFiles.push('./base.package.json')
+    console.log("[MERGE] ", pkgFiles)
+    let packageJson = mergeDeps.npm({
+        name: flow.name.toLowerCase().replace(/ /g, '-'),
+        description: flow.name,
+        main: 'index.js',
+        version: version
+    }, pkgFiles)
+    console.log("[MERGE] ", packageJson)
+    return packageJson
+  } 
+
+  //Identify modules used
+  //Merge package dependencies
+  //Create files for each module
+  //Find user input connections
+  //Prechain flow
+  //Write readme
+  bundle(user, flow, version){
+    console.log(user)
+    version = '0.0.1'
+    return new Promise((resolve, reject) => {
+      console.log("Bundling Flow: ", flow)
+      let modulesUsed = this.find_modules(flow);
+      let connectionsUsed = this.find_connections(flow)
+
+      let packageFiles = modulesUsed.map((x) => {
+        return `${x.fs_path}/package.json`
+      })
+
+      let moduleFileBundles = modulesUsed.map((x) => {
+        return this.get_module_files(x)
+      })
+
+      let mergedPackageFile = JSON.stringify(this.merge_packfiles(flow, packageFiles, version)) 
+      
+  
+      
+      let libraries = {}
+
+      let publishedModules = moduleFileBundles.map((x, ix) => {
+        let published_mod = this.libify(modulesUsed, x, ix)
+        libraries = {...libraries, ...published_mod.files}
+        return published_mod
+      })
+      console.log("Libraries", publishedModules)
+    
+      this.registry.newRepo(flow).then(() => {
+        
+        this.write_main(flow, modulesUsed, connectionsUsed, publishedModules).then((indexFile) => {
+        this.getPackage(user.user, flow, indexFile, mergedPackageFile, libraries, (sha) => {
+          resolve({name: mergedPackageFile.name, version: sha})
+        })
+  
+      })
+
+      })
+    }) 
+  }
+
+  writePackage(prefix_path, pack_spec){
+    for(var k in pack_spec){
+      if(typeof(pack_spec[k]) == "object"){
+        if(!fs.existsSync(`${prefix_path}/${k}`)){
+          fs.mkdirSync(`${prefix_path}/${k}`)
+        } 
+        this.writePackage(`${prefix_path}/${k}`, pack_spec[k])
+      }else{
+        fs.writeFileSync(`${prefix_path}/${k}`, pack_spec[k])
+      }
+    }
+  }
+ 
+
+  getPackage(user, flow, main, packageFile, libraries, cb){
+    console.log("GET PACKAGE")
+    /*
+     * Write files to git repo in /tmp/
+     * Commit a message
+     * Push to remote
+     *
+     */
+    let name = `@${user}/flows/${flow.name.toLowerCase().replace(/ /g, '-')}`
+    let git_dir = `/tmp/${flow.id}`
+    let readme = `
+        #${flow.name}
+
+        ## Usage
+          
+          const Lib = require('${flow.name.toLowerCase().replace(/ /g, '-')}')`
+
+    let struct = {
+      'lib': libraries,
+      'flow': {
+        'index.js': fs.readFileSync('./src/flow/index.js', 'utf8'),
+        'flow.js': fs.readFileSync('./src/flow/flow.js', 'utf8'),
+        'parser.js': fs.readFileSync('./src/flow/parser.js', 'utf8')
+      },
+      'index.js': main,
+      'README.md': readme,
+      'package.json': packageFile
+    }
+    
+    
+    
+    this.writePackage(`/tmp/${flow.id}`, struct) 
+      this.registry.updateRepo(flow, "Committing to a new way of thinking").then((sha) => {
+        cb(sha) 
+      })
+  }
+
 
   //TODO check that all modules added will actually get fired
   find_modules(flow){
@@ -54,16 +173,6 @@ class Packager {
     return connections; 
   }
 
-  merge_packfiles(flow, pkgFiles, version){
-    pkgFiles.push('./base.package.json')
-    return mergeDeps.npm({
-        name: flow.name.toLowerCase().replace(/ /g, '-'),
-        description: flow.name,
-        main: 'index.js',
-        version: version
-    }, pkgFiles)
-  } 
-
   get_module_files(module){
     let files = []
     files.push(`${module.packageJSON.main}`)
@@ -81,7 +190,8 @@ class Packager {
     let libFiles = {}
     let module = modules[module_index]
     files.map((file) => {
-      libFiles[`lib/${module.id}/${file}`] = fs.readFileSync(`${module.fs_path}/${file}`, 'utf8')
+      if(!libFiles[module.id]) libFiles[module.id] = {}
+      libFiles[module.id][file] = fs.readFileSync(`${module.fs_path}/${file}`, 'utf8')
     })
 
     return {id: module.id, assigned: module.id.replace(/-/g, '_'), files: libFiles}
@@ -227,101 +337,7 @@ class Packager {
     })
   }
 
-  //Identify modules used
-  //Merge package dependencies
-  //Create files for each module
-  //Find user input connections
-  //Prechain flow
-  //Write readme
-  bundle(flow, version){
-    return new Promise((resolve, reject) => {
-      console.log("Bundling Flow: ", flow)
-      let modulesUsed = this.find_modules(flow);
-      let connectionsUsed = this.find_connections(flow)
-
-      let packageFiles = modulesUsed.map((x) => {
-        return `${x.fs_path}/package.json`
-      })
-
-      let moduleFileBundles = modulesUsed.map((x) => {
-        return this.get_module_files(x)
-      })
-
-      let mergedPackageFile = this.merge_packfiles(flow, packageFiles, version) 
-
-      let publishSpec = {
-        'package.json': mergedPackageFile,
-      }
-
-      let publishedModules = moduleFileBundles.map((x, ix) => {
-        let published_mod = this.libify(modulesUsed, x, ix)
-        publishSpec = {
-          ...publishSpec,
-          ...published_mod.files
-        }
-        return published_mod
-      })
-
-
-  /*    publishSpec['README.md'] = `
-        #${flow.name}
-
-        ## Usage
-          
-          const Lib = require('${flow.name.toLowerCase().replace(/ /g, '-')}')
-
-          const instantiated = new Lib(${userInputs});
-   
-
-      `
-  */
-
-      publishSpec['flow/index.js'] = fs.readFileSync('./src/flow/index.js', 'utf8')
-      publishSpec['flow/flow.js'] = fs.readFileSync('./src/flow/flow.js', 'utf8')
-      publishSpec['flow/parser.js'] = fs.readFileSync('./src/flow/parser.js', 'utf8')
-
-      this.write_main(flow, modulesUsed, connectionsUsed, publishedModules).then((indexFile) => {
-        publishSpec['index.js'] = indexFile 
-        console.log(publishSpec['index.js'])      
-        npmPublish(publishSpec, {
-          auth: {
-            token: NPM_TOKEN,
-          },
-          registry: "http://localhost:4873"
-        }).then(() => {
-          console.log("Published: ", flow.name)
-          resolve({name: mergedPackageFile.name, version: mergedPackageFile.version})
-        }).catch((err) => {
-          reject({error: err})
-        })
-
-
-
-      })
-    }) 
-  }
 }
 
 module.exports = Packager;
-
-/*
-npmPublish({
-  'package.json': {
-    name: 'test-unit',
-    version: '0.0.2',
-    main: 'index.js',
-  },
-  'build/main.js': `module.exports = function(g){
-    console.log('hello ' + greeting)
-  }`
-}, {
-  auth: {
-    token: 
-  },
-  registry: 'http://localhost:4873'
-}).then(() => {
-  console.log("PUblished")
-}, (err) => {
-  console.error(err)
-})*/
 

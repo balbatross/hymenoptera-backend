@@ -3,8 +3,8 @@ var uuid = require('uuid')
 
 module.exports = (engine) => {
   let router = new Router()
-  router.get('/', (req, res) => {
-    engine.getFlows().then((flows) => {
+  router.get('/:project_id', (req, res) => {
+    engine.getFlows(req.user.id, req.params.project_id).then((flows) => {
     
       let mapped_flows = flows.map((x) => {
         return {
@@ -17,7 +17,7 @@ module.exports = (engine) => {
     })
   })
 
-  router.post('/', (req, res) => {
+  router.post('/:project_id', (req, res) => {
     let flow = req.body.flow;
 
     if(!flow.id){
@@ -28,16 +28,16 @@ module.exports = (engine) => {
       flow.flow = {nodes: [], links: []}
     } 
 
-    engine.addFlow(flow).then((id) => {
-      res.send({success: true})
+    engine.addFlow(req.user.id, req.params.project_id, flow).then((id) => {
+      res.send({success: true, flow: flow})
     })
   })
 
-  router.put('/:id', (req, res) => {
+  router.put('/:project_id/:id', (req, res) => {
     let id = req.params.id;
 
     if(id ){
-      engine.updateFlow(id, req.body.flow).then((result) => {
+      engine.updateFlow(req.user.id, req.params.project_id, id, req.body.flow).then((result) => {
         res.send({result: result})
       })
     }else{
@@ -46,12 +46,12 @@ module.exports = (engine) => {
   })
 
   //PACKAGE ROUTE
-  router.post('/:id/package', (req, res) => {
+  router.post('/:project_id/:id/package', (req, res) => {
     let id = req.params.id;
     let version = req.body.version;
 
-    engine.getFlow(id).then((flow) => {
-      engine.packager.bundle(flow, version).then((module) => {
+    engine.getFlow(req.user.id, req.params.project_id, id).then((flow) => {
+      engine.packager.bundle(req.user, flow, version).then((module) => {
         res.send({module: module})
       }).catch((err) => {
         res.send(err)

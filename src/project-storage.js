@@ -7,7 +7,7 @@ class ProjectStorage {
   add(proj){
     return new Promise((resolve, reject) => {
       this.backend.collection('projects').insert(proj, (err) => {
-        resolve()
+        resolve(proj)
       })
     })
   }
@@ -21,18 +21,18 @@ class ProjectStorage {
     })
   }*/
 
-  get(id){
+  get(user_id, id){
     return new Promise((resolve, reject) => {
-      this.backend.collection('projects').findOne({id: id}, (err, result) => {
+      this.backend.collection('projects').findOne({user_id: user_id, id: id}, (err, result) => {
         if(err) return reject(err);
         resolve(result)
       })
     })
   }
 
-  getAll(){
+  getAll(user_id){
     return new Promise((resolve, reject) => {
-      this.backend.collection('projects').find({}).toArray((err, arr) => {
+      this.backend.collection('projects').find({user_id: user_id}).toArray((err, arr) => {
         if(err) return reject(err)
         resolve(arr)
       })

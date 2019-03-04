@@ -1,0 +1,47 @@
+{
+  "name": "base-utils",
+  "description": "Utils",
+  "version": "0.0.0",
+  "main": "index.js",
+  "options": {
+  },
+  "dependencies": {     
+    "dot": "^1.1.2"
+  },
+  "modules": [
+    {
+      "key": "sha256",
+      "config": {
+        "params": {
+          "text": "string"
+        },
+        "output": {
+          "hash": "string"
+        }
+      }
+    },
+    {
+      "key": "template",
+      "config": {
+        "params": {
+          "template": "string",
+          "data": "object"
+        },
+        "output": {
+          "formatted": "string"
+        }
+      }
+    },
+    {
+      "key": "readFile",
+      "config": {
+        "params": {
+          "path": "string"
+        },
+        "output": {
+          "file": "string"
+        }
+      }
+    }
+  ]  
+}
