@@ -167,12 +167,16 @@ class Flow {
     for(var k in opts){
       let p = params[k]
       let o = opts[k]
-      
-      if(typeof(p) == "object"){
-        obj[k] = this.eval_object(data, o)  
-      }else{
+    try{
+        obj[k] = this.eval_object(data, o)
+      }catch(e){
         obj[k] = o
-      }
+      }      
+//      if(typeof(p) == "object"){
+       // obj[k] = this.eval_object(data, o)  
+  //    }else{
+    //    obj[k] = o
+    //  }
 
     }
     return obj 

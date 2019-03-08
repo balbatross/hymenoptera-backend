@@ -18,6 +18,7 @@ class Server {
     }
   }
 
+
   registerRoute(route){
     this.routes.push(route);
     route.register(this.app)

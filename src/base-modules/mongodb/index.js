@@ -15,7 +15,7 @@ class MongoData {
     }
   }
 
-  insert(opts){
+  insertOne(opts){
     return new Promise((resolve, reject) => {
       this.client.collection(opts.coll).insertOne(opts.object, (err, res) => {
         if(err){
